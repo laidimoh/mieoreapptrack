@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { formatCurrency } from '@/lib/utils.js';
 
 const ProfilePage = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -21,7 +21,7 @@ const ProfilePage = () => {
     hourlyRate: user?.hourlyRate || 25,
     currency: user?.currency || 'USD',
     timezone: user?.timezone || 'UTC',
-    company: user?.company || '',
+    companyName: user?.companyName || '',
     jobTitle: user?.jobTitle || ''
   });
 
@@ -34,7 +34,7 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     try {
-      const result = await updateProfile(formData);
+      const result = await updateUserProfile(formData);
       if (result.success) {
         setIsEditing(false);
         // Could add a toast notification here
@@ -55,7 +55,7 @@ const ProfilePage = () => {
       hourlyRate: user?.hourlyRate || 25,
       currency: user?.currency || 'USD',
       timezone: user?.timezone || 'UTC',
-      company: user?.company || '',
+      companyName: user?.companyName || '',
       jobTitle: user?.jobTitle || ''
     });
     setIsEditing(false);
@@ -144,11 +144,11 @@ const ProfilePage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
+                  <Label htmlFor="companyName">Company</Label>
                   <Input
-                    id="company"
-                    value={formData.company}
-                    onChange={(e) => handleInputChange('company', e.target.value)}
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => handleInputChange('companyName', e.target.value)}
                     disabled={!isEditing}
                     placeholder="Your company name"
                   />
@@ -255,7 +255,7 @@ const ProfilePage = () => {
                     </div>
                     <div className="flex items-center">
                       <Building className="w-4 h-4 mr-2 text-muted-foreground" />
-                      <span>Company: {formData.company || 'Not set'}</span>
+                      <span>Company: {formData.companyName || 'Not set'}</span>
                     </div>
                   </div>
                 </div>

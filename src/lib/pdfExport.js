@@ -111,7 +111,7 @@ export const exportTimeEntriesToPdf = async (timeEntries, user, startDate, endDa
     doc.setFont(undefined, 'bold');
     doc.text(companyName, 20, 76);
 
-    // Table data with clean, professional structure
+    // Table data with clean, professional structure focused on time tracking
     const tableColumn = ["Date", "Start Time", "End Time", "Break (min)", "Total Hours"];
     const tableRows = [];
 
@@ -126,19 +126,19 @@ export const exportTimeEntriesToPdf = async (timeEntries, user, startDate, endDa
         const hourlyRate = parseFloat(user?.hourlyRate) || 0;
         const earnings = hours * hourlyRate;
         
-        // Format time display
+        // Format time display to be more prominent and clear
         const formatTime = (time) => {
           if (!time) return 'N/A';
           // If it's already in HH:MM format, return as is
           if (time.includes(':')) return time;
-          // Otherwise format it
+          // Otherwise format it properly
           return time;
         };
         
         const entryData = [
           entry.date || 'N/A',
-          formatTime(entry.startTime),
-          formatTime(entry.endTime),
+          formatTime(entry.startTime) || 'N/A',
+          formatTime(entry.endTime) || 'N/A',
           entry.breakDuration || '0',
           hours.toFixed(2)
         ];
@@ -179,10 +179,10 @@ export const exportTimeEntriesToPdf = async (timeEntries, user, startDate, endDa
         lineWidth: 0.5
       },
       columnStyles: {
-        0: { cellWidth: 35, halign: 'center' }, // Date
-        1: { cellWidth: 30, halign: 'center' }, // Start Time
-        2: { cellWidth: 30, halign: 'center' }, // End Time
-        3: { cellWidth: 30, halign: 'center' }, // Break
+        0: { cellWidth: 40, halign: 'center' }, // Date - wider for better readability
+        1: { cellWidth: 35, halign: 'center', fontStyle: 'bold' }, // Start Time - bold for prominence  
+        2: { cellWidth: 35, halign: 'center', fontStyle: 'bold' }, // End Time - bold for prominence
+        3: { cellWidth: 25, halign: 'center' }, // Break
         4: { cellWidth: 35, halign: 'center' }  // Total Hours
       },
       margin: { top: 10, right: 20, bottom: 10, left: 20 },
@@ -203,17 +203,30 @@ export const exportTimeEntriesToPdf = async (timeEntries, user, startDate, endDa
     // Add some space
     finalY += 20;
     
-    // Simple, clean total hours display
+    const currency = user?.currency || 'USD';
+    const hourlyRate = parseFloat(user?.hourlyRate) || 0;
+    
+    // Professional summary with hours and earnings
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.setFont(undefined, 'bold');
     doc.text(`Total Hours: ${totalHours.toFixed(2)}h`, 105, finalY, { align: 'center' });
     
+    if (hourlyRate > 0) {
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Rate: ${currency} ${hourlyRate.toFixed(2)}/hour`, 105, finalY + 12, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text(`Total Earnings: ${currency} ${totalEarnings.toFixed(2)}`, 105, finalY + 24, { align: 'center' });
+    }
+    
     // Add a simple footer
     doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(100, 100, 100);
-    const footerY = finalY + 20;
+    const footerY = finalY + (hourlyRate > 0 ? 40 : 25);
     doc.text(`Generated on ${new Date().toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'long', 
