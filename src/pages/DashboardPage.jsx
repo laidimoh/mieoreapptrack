@@ -1,12 +1,15 @@
 import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.jsx'
 import { Button } from '../components/ui/button.jsx'
+import { Badge } from '../components/ui/badge.jsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.jsx'
-import { Clock, Plus, Calendar, BarChart3, TrendingUp, Target } from 'lucide-react'
+import ProFeatureCard from '../components/ui/ProFeatureCard.jsx'
+import { Clock, Plus, Calendar, BarChart3, TrendingUp, Target, Edit3, CalendarPlus } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useData } from '../contexts/DataContext.jsx'
 import { useTimeTracking } from '../contexts/TimeTrackingContext.jsx'
 import ManualEntryDialog from '../components/time-tracker/ManualEntryDialog.jsx'
+import BulkMonthEntryDialog from '../components/reports/BulkMonthEntryDialog.jsx'
 import LiveTimer from '../components/time-tracker/LiveTimer.jsx'
 import DashboardCharts from '../components/dashboard/DashboardCharts.jsx'
 import InteractiveCalendar from '../components/calendar/InteractiveCalendar.jsx'
@@ -56,6 +59,16 @@ const DashboardPage = () => {
     }
   }
 
+  const handleUpgradeClick = () => {
+    // This would open a subscription modal or redirect to pricing page
+    alert('Upgrade to PRO to unlock advanced features!');
+  }
+
+  const handleBulkEntriesAdded = (newEntries) => {
+    // This will trigger a re-render to show new entries
+    console.log('Bulk entries added:', newEntries.length);
+  }
+
 
   return (
     <div className="space-y-6">
@@ -69,117 +82,43 @@ const DashboardPage = () => {
         </p>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-border/50 hover:shadow-md transition-shadow cursor-pointer" onClick={handleStartStopClick}>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className={`p-3 rounded-full ${isRunning ? 'bg-red-100 dark:bg-red-900/20' : 'bg-green-100 dark:bg-green-900/20'}`}>
-                <Clock className={`w-6 h-6 ${isRunning ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} />
-              </div>
-              <div>
-                <h3 className="font-semibold">{isRunning ? 'Stop Timer' : 'Start Timer'}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {isRunning ? `Tracking: ${currentProject?.name || 'General'} (${formatDuration(elapsedTime)})` : 'Begin tracking time'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <ManualEntryDialog trigger={
-          <Card className="border-border/50 hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-                  <Plus className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Add Entry</h3>
-                  <p className="text-sm text-muted-foreground">Log time manually</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        }/>
-
-        <Card className="border-border/50 hover:shadow-md transition-shadow cursor-pointer">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-full">
-                <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold">View Calendar</h3>
-                <p className="text-sm text-muted-foreground">Monthly overview</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Today</p>
-                <p className="text-2xl font-bold">{statistics.today.hours.toFixed(1)}h</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatCurrency(todayEarnings, user?.currency)}
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">This Week</p>
-                <p className="text-2xl font-bold">{statistics.week.hours.toFixed(1)}h</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatCurrency(weekEarnings, user?.currency)} • Target: 40h
-                </p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
-                <p className="text-2xl font-bold">{statistics.month.hours.toFixed(1)}h</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatCurrency(monthEarnings, user?.currency)} • Target: 160h
-                </p>
-              </div>
-              <BarChart3 className="w-8 h-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Productivity</p>
-                <p className="text-2xl font-bold">
-                  {statistics.week.hours >= 40 ? '100' : Math.round((statistics.week.hours / 40) * 100)}%
-                </p>
-                <p className="text-sm text-muted-foreground">Trend: stable</p>
-              </div>
-              <Target className="w-8 h-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Quick Entry Actions */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle>Quick Entry Actions</CardTitle>
+          <CardDescription>
+            Add time entries quickly with manual entry or bulk month addition
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            <ManualEntryDialog 
+              trigger={
+                <Button 
+                  size="lg"
+                  className="px-6 py-3"
+                >
+                  <Edit3 className="w-5 h-5 mr-2" />
+                  Add Manual Entry
+                </Button>
+              }
+            />
+            <BulkMonthEntryDialog 
+              trigger={
+                <Button 
+                  variant="outline"
+                  size="lg"
+                  className="px-6 py-3"
+                >
+                  <CalendarPlus className="w-5 h-5 mr-2" />
+                  Add Bulk Month
+                </Button>
+              }
+              onEntriesAdded={handleBulkEntriesAdded}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Live Timer */}
       <LiveTimer />
@@ -200,6 +139,28 @@ const DashboardPage = () => {
         <TabsContent value="charts" className="space-y-6">
           {/* Dashboard Charts */}
           <DashboardCharts />
+          
+          {/* PRO Analytics Features */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <ProFeatureCard 
+              title="Advanced Analytics"
+              description="Deep insights into productivity patterns and trends"
+              icon={BarChart3}
+              onUpgradeClick={handleUpgradeClick}
+            />
+            <ProFeatureCard 
+              title="Custom Reports"
+              description="Create detailed reports with advanced filtering"
+              icon={TrendingUp}
+              onUpgradeClick={handleUpgradeClick}
+            />
+            <ProFeatureCard 
+              title="Team Dashboard"
+              description="Monitor team performance and project progress"
+              icon={Target}
+              onUpgradeClick={handleUpgradeClick}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="calendar" className="space-y-6">

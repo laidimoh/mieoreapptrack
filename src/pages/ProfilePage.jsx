@@ -67,23 +67,30 @@ const ProfilePage = () => {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Profile</h1>
           <p className="text-muted-foreground mt-2">
-            Manage your account settings and preferences
+            {isEditing 
+              ? "Make your changes and click Save to update your profile" 
+              : "Click 'Edit Profile' to make changes to your account settings"
+            }
           </p>
         </div>
         <div className="flex items-center space-x-2">
           {isEditing ? (
             <>
+              <Badge variant="secondary" className="mr-2">
+                <Edit3 className="w-3 h-3 mr-1" />
+                Editing Mode
+              </Badge>
               <Button variant="outline" onClick={handleCancel}>
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </Button>
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
                 <Save className="w-4 h-4 mr-2" />
                 Save Changes
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>
+            <Button onClick={() => setIsEditing(true)} size="lg">
               <Edit3 className="w-4 h-4 mr-2" />
               Edit Profile
             </Button>
@@ -110,6 +117,17 @@ const ProfilePage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {!isEditing && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <Shield className="w-4 h-4 text-blue-600 mr-2" />
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      Your profile is in read-only mode. Click "Edit Profile" above to make changes.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
@@ -118,6 +136,7 @@ const ProfilePage = () => {
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     disabled={!isEditing}
+                    className={!isEditing ? "bg-muted/50" : ""}
                   />
                 </div>
                 <div className="space-y-2">
@@ -127,6 +146,7 @@ const ProfilePage = () => {
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     disabled={!isEditing}
+                    className={!isEditing ? "bg-muted/50" : ""}
                   />
                 </div>
               </div>
@@ -139,6 +159,7 @@ const ProfilePage = () => {
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   disabled={!isEditing}
+                  className={!isEditing ? "bg-muted/50" : ""}
                 />
               </div>
 
@@ -151,6 +172,7 @@ const ProfilePage = () => {
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
                     disabled={!isEditing}
                     placeholder="Your company name"
+                    className={!isEditing ? "bg-muted/50" : ""}
                   />
                 </div>
                 <div className="space-y-2">
@@ -161,6 +183,7 @@ const ProfilePage = () => {
                     onChange={(e) => handleInputChange('jobTitle', e.target.value)}
                     disabled={!isEditing}
                     placeholder="Your job title"
+                    className={!isEditing ? "bg-muted/50" : ""}
                   />
                 </div>
               </div>
@@ -190,7 +213,7 @@ const ProfilePage = () => {
                       value={formData.hourlyRate}
                       onChange={(e) => handleInputChange('hourlyRate', parseFloat(e.target.value) || 0)}
                       disabled={!isEditing}
-                      className="rounded-r-none"
+                      className={`rounded-r-none ${!isEditing ? "bg-muted/50" : ""}`}
                       min="0"
                       step="0.01"
                     />

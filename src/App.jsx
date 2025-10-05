@@ -12,8 +12,7 @@ import CalendarReportsPage from './pages/CalendarReportsPage.jsx'
 import DailyInputPage from './pages/DailyInputPage.jsx'
 import MonthlyOverviewPage from './pages/MonthlyOverviewPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
-import AIInsightsPage from './pages/AIInsightsPage.jsx'
-import SalaryEstimatorPage from './pages/SalaryEstimatorPage.jsx'
+import AnalyticsPage from './pages/AnalyticsPage.jsx'
 import AppLayout from './components/layout/AppLayout.jsx'
 import './App.css'
 
@@ -115,24 +114,22 @@ const AppRoutes = () => {
         element={<Navigate to="/calendar" replace />}
       />
       <Route 
-        path="/ai-insights" 
+        path="/analytics" 
         element={
           <ProtectedRoute>
             <AppLayout>
-              <AIInsightsPage />
+              <AnalyticsPage />
             </AppLayout>
           </ProtectedRoute>
         } 
       />
       <Route 
+        path="/ai-insights" 
+        element={<Navigate to="/analytics" replace />}
+      />
+      <Route 
         path="/salary-estimator" 
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <SalaryEstimatorPage />
-            </AppLayout>
-          </ProtectedRoute>
-        } 
+        element={<Navigate to="/analytics" replace />}
       />
       <Route 
         path="/profile" 

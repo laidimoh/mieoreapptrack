@@ -47,16 +47,16 @@ const AppLayout = ({ children }) => {
       description: 'Calendar view and report generation'
     },
     {
-      name: 'AI Insights',
-      href: '/ai-insights',
+      name: 'Analytics',
+      href: '/analytics',
       icon: Brain,
-      description: 'Productivity analytics & tips'
+      description: 'AI insights & salary projections'
     },
     {
-      name: 'Salary Estimator',
-      href: '/salary-estimator',
-      icon: Calculator,
-      description: 'Earnings calculator & forecasts'
+      name: 'Profile',
+      href: '/profile',
+      icon: User,
+      description: 'Personal settings & preferences'
     }
   ]
 
@@ -127,18 +127,28 @@ const AppLayout = ({ children }) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center" onClick={() => setSidebarOpen(false)}>
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      console.log('Sidebar Profile dropdown clicked');
+                      navigate('/profile');
+                      setSidebarOpen(false);
+                    }}
+                    className="flex items-center cursor-pointer"
+                  >
                     <User className="w-4 h-4 mr-2" />
                     Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="flex items-center" onClick={() => setSidebarOpen(false)}>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      console.log('Sidebar Settings dropdown clicked');
+                      navigate('/settings');
+                      setSidebarOpen(false);
+                    }}
+                    className="flex items-center cursor-pointer"
+                  >
                     <Settings className="w-4 h-4 mr-2" />
                     Settings
-                  </Link>
-                </DropdownMenuItem>
+                  </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                   <LogOut className="w-4 h-4 mr-2" />
@@ -158,7 +168,10 @@ const AppLayout = ({ children }) => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={() => {
+                    console.log(`Navigation link clicked: ${item.name} -> ${item.href}`);
+                    setSidebarOpen(false);
+                  }}
                   className={cn(
                     "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
                     isActive
@@ -215,7 +228,7 @@ const AppLayout = ({ children }) => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-medium text-foreground">
                   {user?.firstName} {user?.lastName}
@@ -224,6 +237,47 @@ const AppLayout = ({ children }) => {
                   {user?.company || 'WorkTrack User'}
                 </p>
               </div>
+              
+              {/* Profile Button */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => console.log('Profile button clicked')}
+                  >
+                    <User className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      console.log('Header Profile dropdown clicked');
+                      navigate('/profile');
+                    }}
+                    className="flex items-center cursor-pointer"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      console.log('Header Settings dropdown clicked');
+                      navigate('/settings');
+                    }}
+                    className="flex items-center cursor-pointer"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    App Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>

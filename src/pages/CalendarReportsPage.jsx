@@ -1,48 +1,49 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.jsx';
 import { 
-  Calendar as CalendarIcon, 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog.jsx';
+import ProFeatureCard from '@/components/ui/ProFeatureCard.jsx';
+import { 
   FileText, 
   Download, 
-  Mail, 
-  Clock,
-  TrendingUp,
-  BarChart3,
-  CalendarPlus
+  Users,
+  Settings,
+  Edit3,
+  Trash2
 } from 'lucide-react';
-import InteractiveCalendar from '@/components/calendar/InteractiveCalendar.jsx';
-import EmailReportDialog from '@/components/reports/EmailReportDialog.jsx';
-import BulkMonthEntryDialog from '@/components/reports/BulkMonthEntryDialog.jsx';
-import { exportTimeEntriesToPdf, exportTimeEntriesToCsv } from '@/lib/pdfExport.js';
+import ExportOptionsDialog from '@/components/reports/ExportOptionsDialog.jsx';
+import ManualEntryDialog from '@/components/time-tracker/ManualEntryDialog.jsx';
+import { exportTimeEntriesToPdf } from '@/lib/pdfExport.js';
 import { useData } from '@/contexts/DataContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
-import { formatDate, formatCurrency } from '@/lib/utils.js';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
-import ReportsTable from '@/components/reports/ReportsTable.jsx';
+import { formatDate } from '@/lib/utils.js';
 
 const CalendarReportsPage = () => {
   const { user } = useAuth();
-  const { timeEntries, projects } = useData();
+  const { timeEntries, updateTimeEntry, deleteTimeEntry } = useData();
   
-  // Report filters
-  const [startDate, setStartDate] = useState(formatDate(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState(formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(formatDate(new Date(), 'yyyy-MM-dd'));
-  const [selectedProject, setSelectedProject] = useState('all');
   const [filteredEntries, setFilteredEntries] = useState([]);
-  
-  // Export state
-  const [exportedFile, setExportedFile] = useState(null);
-  const [exportedFileName, setExportedFileName] = useState("");
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [deletingEntry, setDeletingEntry] = useState(null);
 
   useEffect(() => {
     filterEntries();
-  }, [startDate, endDate, selectedProject, timeEntries]);
+  }, [startDate, endDate, timeEntries]);
 
   const filterEntries = () => {
     let entries = timeEntries.filter(entry => {
@@ -51,40 +52,24 @@ const CalendarReportsPage = () => {
       const end = new Date(endDate);
       return entryDate >= start && entryDate <= end;
     });
-
-    if (selectedProject !== 'all') {
-      entries = entries.filter(entry => entry.projectId === selectedProject);
-    }
     setFilteredEntries(entries);
   };
 
-  const totalReportHours = filteredEntries.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
-  const totalReportEarnings = totalReportHours * (user?.hourlyRate || 0);
-
-  const handleExportPdf = async () => {
+  const handleExportPdf = async (exportOptions = {}) => {
     try {
-      console.log('Starting PDF export process...');
-      console.log('Filtered entries:', filteredEntries.length);
-      console.log('User data:', user);
-      
       if (filteredEntries.length === 0) {
         alert('No data to export. Please select a date range with time entries.');
         return;
       }
 
-      console.log('Calling exportTimeEntriesToPdf...');
-      const result = await exportTimeEntriesToPdf(filteredEntries, user, startDate, endDate);
+      const result = await exportTimeEntriesToPdf(filteredEntries, user, startDate, endDate, exportOptions);
       
       if (!result || !result.blob) {
         throw new Error('PDF export returned invalid result');
       }
       
       const { blob, fileName } = result;
-      setExportedFile(blob);
-      setExportedFileName(fileName);
       
-      console.log('Creating download link...');
-      // Create download link and trigger download
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -93,179 +78,48 @@ const CalendarReportsPage = () => {
       document.body.appendChild(link);
       link.click();
       
-      // Clean up
       setTimeout(() => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        console.log('PDF download cleanup completed');
       }, 100);
-      
-      console.log('PDF download triggered successfully');
     } catch (error) {
-      console.error('PDF Export Error Details:', error);
-      console.error('Error type:', typeof error);
-      console.error('Error constructor:', error.constructor.name);
-      
-      let errorMessage = 'Failed to export PDF. ';
-      if (error.message) {
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'Unknown error occurred.';
-      }
-      
-      alert(errorMessage + '\n\nPlease check the browser console for more details.');
+      console.error('PDF Export Error:', error);
+      alert('Failed to export PDF. Please try again.');
     }
   };
 
-  const handleExportCsv = async () => {
+  const handleUpgradeClick = () => {
+    alert('Upgrade to PRO to unlock advanced features!');
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!deletingEntry) return;
+    
     try {
-      if (filteredEntries.length === 0) {
-        alert('No data to export. Please select a date range with time entries.');
-        return;
-      }
-
-      const { blob, fileName } = exportTimeEntriesToCsv(filteredEntries, user, startDate, endDate);
-      setExportedFile(blob);
-      setExportedFileName(fileName);
-      
-      // Create download link and trigger download
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }, 100);
+      await deleteTimeEntry(deletingEntry.id);
+      setDeletingEntry(null);
     } catch (error) {
-      console.error('Error exporting CSV:', error);
-      alert('Failed to export CSV. Please try again.');
+      console.error('Failed to delete entry:', error);
+      alert('Failed to delete entry. Please try again.');
     }
   };
 
-  const handleEntryUpdate = (updatedEntry) => {
-    // Update the filtered entries to reflect the change
-    const updatedEntries = filteredEntries.map(entry => 
-      entry.id === updatedEntry.id ? updatedEntry : entry
-    );
-    setFilteredEntries(updatedEntries);
+  const handleEditEntry = (entry) => {
+    setEditingEntry(entry);
   };
-
-  const handleEntryDelete = (deletedEntry) => {
-    console.log('[REPORTS] Handling entry deletion:', deletedEntry.id, deletedEntry.date);
-    
-    // Remove the deleted entry from filtered entries immediately for UI feedback
-    const updatedEntries = filteredEntries.filter(entry => entry.id !== deletedEntry.id);
-    setFilteredEntries(updatedEntries);
-    
-    // Force a refresh of the filter to pick up any real-time changes
-    setTimeout(() => {
-      console.log('[REPORTS] Forcing filter refresh after deletion');
-      filterEntries();
-    }, 500); // Small delay to allow real-time updates to propagate
-  };
-
-  const handleBulkEntriesAdded = (newEntries) => {
-    // Refresh filtered entries after bulk addition
-    filterEntries();
-  };
-
-  // Calculate some quick stats for the dashboard
-  const thisMonth = timeEntries.filter(entry => {
-    const entryDate = new Date(entry.date);
-    const now = new Date();
-    return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
-  });
-  
-  const thisWeek = timeEntries.filter(entry => {
-    const entryDate = new Date(entry.date);
-    const weekStart = startOfWeek(new Date());
-    const weekEnd = endOfWeek(new Date());
-    return entryDate >= weekStart && entryDate <= weekEnd;
-  });
-
-  const thisMonthHours = thisMonth.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
-  const thisWeekHours = thisWeek.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Reports</h1>
         <p className="text-muted-foreground mt-2">
-          Generate detailed reports and export your time tracking data
+          View and export your time entries
         </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-border/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Week</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{thisWeekHours.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(thisWeekHours * (user?.hourlyRate || 0), user?.currency)} earned
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{thisMonthHours.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(thisMonthHours * (user?.hourlyRate || 0), user?.currency)} earned
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Report Period</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalReportHours.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(totalReportEarnings, user?.currency)} earnings
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{timeEntries.length}</div>
-            <p className="text-xs text-muted-foreground">
-              All time entries logged
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="w-5 h-5 mr-2" />
-            Report Filters
-          </CardTitle>
-          <CardDescription>Select date range and project to generate your report</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
               <Input
@@ -284,92 +138,184 @@ const CalendarReportsPage = () => {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="projectFilter">Project</Label>
-              <Select value={selectedProject} onValueChange={setSelectedProject}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Projects" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Projects</SelectItem>
-                  {projects.map(project => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-
-          <div className="flex justify-between items-center mb-6">
-            <BulkMonthEntryDialog 
-              trigger={
-                <Button variant="outline">
-                  <CalendarPlus className="w-4 h-4 mr-2" />
-                  Add Bulk Month
-                </Button>
-              }
-              onEntriesAdded={handleBulkEntriesAdded}
-            />
+          
+          <div className="flex justify-between items-center">
             <div className="flex space-x-4">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Total Hours</p>
-                <p className="text-xl font-bold">{totalReportHours.toFixed(2)}h</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Total Earnings</p>
-                <p className="text-xl font-bold">{formatCurrency(totalReportEarnings, user?.currency)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Entries Count</p>
-                <p className="text-xl font-bold">{filteredEntries.length}</p>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  console.log('[REPORTS] Manual refresh triggered');
-                  filterEntries();
-                }}
-                title="Refresh data"
-              >
-                <Clock className="w-4 h-4 mr-1" />
-                Refresh
+              <Button variant="outline" size="sm" onClick={() => {
+                const today = new Date();
+                setStartDate(formatDate(today, 'yyyy-MM-dd'));
+                setEndDate(formatDate(today, 'yyyy-MM-dd'));
+              }}>
+                Today
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const today = new Date();
+                const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                setStartDate(formatDate(lastWeek, 'yyyy-MM-dd'));
+                setEndDate(formatDate(today, 'yyyy-MM-dd'));
+              }}>
+                Last 7 Days
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const today = new Date();
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                setStartDate(formatDate(firstDay, 'yyyy-MM-dd'));
+                setEndDate(formatDate(today, 'yyyy-MM-dd'));
+              }}>
+                This Month
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const today = new Date();
+                const firstDayPrevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const lastDayPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                setStartDate(formatDate(firstDayPrevMonth, 'yyyy-MM-dd'));
+                setEndDate(formatDate(lastDayPrevMonth, 'yyyy-MM-dd'));
+              }}>
+                Previous Month
               </Button>
             </div>
-          </div>
-
-          <ReportsTable 
-            timeEntries={filteredEntries} 
-            hourlyRate={user?.hourlyRate || 0} 
-            currency={user?.currency}
-            onEntryUpdate={handleEntryUpdate}
-            onEntryDelete={handleEntryDelete}
-          />
-
-          <div className="flex justify-end space-x-4 mt-6">
-            <Button onClick={handleExportPdf} disabled={filteredEntries.length === 0}>
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
-            </Button>
-            <Button onClick={handleExportCsv} disabled={filteredEntries.length === 0} variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <EmailReportDialog 
-              trigger={(
-                <Button variant="outline" disabled={!exportedFile}>
-                  <Mail className="w-4 h-4 mr-2" />
-                  Email to HR
+            
+            <ExportOptionsDialog 
+              trigger={
+                <Button disabled={filteredEntries.length === 0}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export PDF
                 </Button>
-              )}
-              reportFile={exportedFile}
-              reportFileName={exportedFileName}
+              }
+              onExport={handleExportPdf}
             />
           </div>
         </CardContent>
       </Card>
+
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileText className="w-5 h-5 mr-2" />
+            Time Entries
+          </CardTitle>
+          <CardDescription>
+            Detailed view of your tracked time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Start Time</TableHead>
+                  <TableHead>End Time</TableHead>
+                  <TableHead className="text-right">Total Hours</TableHead>
+                  <TableHead className="text-right">Extra Hours</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredEntries.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      No time entries found for the selected date range.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredEntries.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell>{entry.date}</TableCell>
+                      <TableCell>{entry.startTime || '09:00 AM'}</TableCell>
+                      <TableCell>{entry.endTime || '05:00 PM'}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {(entry.totalHours || 0).toFixed(2)}h
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {(entry.extraHours || 0).toFixed(2)}h
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {entry.description || ''}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                          work
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditEntry(entry)}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDeletingEntry(entry)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ProFeatureCard 
+          title="Advanced Analytics"
+          description="Detailed productivity insights and trends"
+          icon={FileText}
+          onUpgradeClick={handleUpgradeClick}
+        />
+        <ProFeatureCard 
+          title="Custom Reports"
+          description="Create and schedule custom report formats"
+          icon={Settings}
+          onUpgradeClick={handleUpgradeClick}
+        />
+        <ProFeatureCard 
+          title="Team Management"
+          description="Manage team members and projects"
+          icon={Users}
+          onUpgradeClick={handleUpgradeClick}
+        />
+      </div>
+
+      {editingEntry && (
+        <ManualEntryDialog
+          trigger={null}
+          entry={editingEntry}
+          onClose={() => setEditingEntry(null)}
+          isOpen={!!editingEntry}
+        />
+      )}
+
+      <AlertDialog open={!!deletingEntry} onOpenChange={() => setDeletingEntry(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Time Entry</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this time entry for {deletingEntry?.date}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingEntry(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEntry}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

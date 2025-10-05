@@ -1,6 +1,9 @@
 import React from 'react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
+import { Badge } from '@/components/ui/badge.jsx'
+import { Button } from '@/components/ui/button.jsx'
+import ProFeatureCard from '@/components/ui/ProFeatureCard.jsx'
 import { TrendingUp, DollarSign, Clock, Calendar } from 'lucide-react'
 import { useData } from '@/contexts/DataContext.jsx'
 import { useAuth } from '@/contexts/AuthContext.jsx'
@@ -11,18 +14,21 @@ const DashboardCharts = () => {
   const { timeEntries, statistics } = useData()
   const { user } = useAuth()
 
-  // Prepare last 7 days data
-  const getLast7DaysData = () => {
+  // Prepare last month data (daily breakdown)
+  const getLastMonthData = () => {
     const data = []
-    for (let i = 6; i >= 0; i--) {
-      const date = subDays(new Date(), i)
-      const dateStr = format(date, 'yyyy-MM-dd')
+    const today = new Date()
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+    const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0)
+    
+    for (let d = new Date(lastMonth); d <= lastDayOfLastMonth; d.setDate(d.getDate() + 1)) {
+      const dateStr = format(d, 'yyyy-MM-dd')
       const dayEntries = timeEntries.filter(entry => entry.date === dateStr && entry.type === 'work')
       const totalHours = dayEntries.reduce((sum, entry) => sum + (entry.totalHours || 0), 0)
       const earnings = totalHours * (user?.hourlyRate || 25)
       
       data.push({
-        date: format(date, 'MMM dd'),
+        date: format(d, 'MMM dd'),
         hours: Number(totalHours.toFixed(2)),
         earnings: Number(earnings.toFixed(2))
       })
@@ -51,8 +57,13 @@ const DashboardCharts = () => {
     return data
   }
 
-  const last7DaysData = getLast7DaysData()
+  const lastMonthData = getLastMonthData()
   const last6MonthsData = getLast6MonthsData()
+
+  const handleUpgradeClick = () => {
+    // This would open a subscription modal or redirect to pricing page
+    alert('Upgrade to PRO to unlock advanced features!');
+  }
 
   return (
     <div className="space-y-6">
@@ -117,14 +128,14 @@ const DashboardCharts = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Last 7 Days Line Chart */}
+        {/* Last Month Line Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Last 7 Days - Daily Hours</CardTitle>
+            <CardTitle>Last Month - Daily Hours</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={last7DaysData}>
+              <LineChart data={lastMonthData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
@@ -170,17 +181,29 @@ const DashboardCharts = () => {
         </Card>
       </div>
 
-      {/* Productivity Heatmap Placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Productivity Heatmap</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-40 flex items-center justify-center bg-muted/50 rounded-lg">
-            <p className="text-muted-foreground">Productivity heatmap coming soon...</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Productivity Heatmap - PRO Feature */}
+      <ProFeatureCard 
+        title="Productivity Heatmap"
+        description="Visual heatmap showing your most productive hours and days"
+        icon={Calendar}
+        onUpgradeClick={handleUpgradeClick}
+      />
+
+      {/* Advanced Analytics - PRO Features */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ProFeatureCard 
+          title="Burnout Analysis"
+          description="AI-powered insights to prevent burnout and optimize work-life balance"
+          icon={TrendingUp}
+          onUpgradeClick={handleUpgradeClick}
+        />
+        <ProFeatureCard 
+          title="Goal Tracking"
+          description="Set and track productivity goals with automated reporting"
+          icon={DollarSign}
+          onUpgradeClick={handleUpgradeClick}
+        />
+      </div>
     </div>
   )
 }

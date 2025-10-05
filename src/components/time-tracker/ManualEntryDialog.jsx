@@ -18,6 +18,7 @@ const ManualEntryDialog = ({ trigger }) => {
     startTime: '07:00',
     endTime: '16:00',
     breakDuration: 60,
+    extraHours: 0,
     projectId: '',
     description: '',
     type: 'work'
@@ -38,6 +39,7 @@ const ManualEntryDialog = ({ trigger }) => {
       const timeEntry = {
         ...formData,
         breakDuration: parseInt(formData.breakDuration) || 0,
+        extraHours: parseFloat(formData.extraHours) || 0,
         totalHours,
         project: selectedProject ? selectedProject.name : 'General Work',
         projectId: formData.projectId || null
@@ -55,6 +57,7 @@ const ManualEntryDialog = ({ trigger }) => {
         startTime: '09:00',
         endTime: '17:00',
         breakDuration: 60,
+        extraHours: 0,
         projectId: '',
         description: '',
         type: 'work'
@@ -120,7 +123,7 @@ const ManualEntryDialog = ({ trigger }) => {
           </div>
 
           {/* Time Fields */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startTime">Start Time</Label>
               <Input
@@ -141,8 +144,12 @@ const ManualEntryDialog = ({ trigger }) => {
                 required
               />
             </div>
+          </div>
+
+          {/* Break and Extra Hours */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="breakDuration">Break (min)</Label>
+              <Label htmlFor="breakDuration">Break (minutes)</Label>
               <Input
                 id="breakDuration"
                 type="number"
@@ -152,13 +159,33 @@ const ManualEntryDialog = ({ trigger }) => {
                 placeholder="60"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="extraHours">Extra Hours</Label>
+              <Input
+                id="extraHours"
+                type="number"
+                min="0"
+                step="0.25"
+                value={formData.extraHours}
+                onChange={(e) => handleInputChange('extraHours', e.target.value)}
+                placeholder="0"
+              />
+            </div>
           </div>
 
           {/* Calculated Hours */}
-          <div className="bg-muted/50 p-3 rounded-lg">
-            <div className="text-sm text-muted-foreground">Total Hours</div>
-            <div className="text-2xl font-bold text-foreground">
-              {totalHours.toFixed(2)}h
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <div className="text-sm text-muted-foreground">Regular Hours</div>
+              <div className="text-xl font-bold text-foreground">
+                {totalHours.toFixed(2)}h
+              </div>
+            </div>
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <div className="text-sm text-muted-foreground">Total Hours (incl. Extra)</div>
+              <div className="text-xl font-bold text-primary">
+                {(totalHours + (parseFloat(formData.extraHours) || 0)).toFixed(2)}h
+              </div>
             </div>
           </div>
 

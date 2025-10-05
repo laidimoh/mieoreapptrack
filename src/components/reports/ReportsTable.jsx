@@ -262,7 +262,6 @@ const ReportsTable = ({ timeEntries, hourlyRate, currency, onEntryUpdate, onEntr
             </TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Project</TableHead>
-            <TableHead>Task</TableHead>
             <TableHead>Description</TableHead>
             <TableHead className="text-right">Hours</TableHead>
             <TableHead className="text-right">Earnings</TableHead>
@@ -280,7 +279,6 @@ const ReportsTable = ({ timeEntries, hourlyRate, currency, onEntryUpdate, onEntr
               </TableCell>
               <TableCell>{entry.date}</TableCell>
               <TableCell>{entry.project || 'N/A'}</TableCell>
-              <TableCell>{entry.task || 'N/A'}</TableCell>
               <TableCell className="max-w-[200px] truncate">{entry.description || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 {editingId === entry.id ? (
@@ -362,7 +360,7 @@ const ReportsTable = ({ timeEntries, hourlyRate, currency, onEntryUpdate, onEntr
                             <br />
                             <strong>Hours:</strong> {formatHours(entry.totalHours)}
                             <br />
-                            <strong>Task:</strong> {entry.task || 'N/A'}
+                            <strong>Task:</strong> {entry.description || 'N/A'}
                             <br />
                             This action cannot be undone.
                           </AlertDialogDescription>

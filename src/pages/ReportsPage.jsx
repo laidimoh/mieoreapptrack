@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input.jsx'
 import { Label } from '@/components/ui/label.jsx'
 import { FileText, Download, Mail, Loader2 } from 'lucide-react'
 import EmailReportDialog from '@/components/reports/EmailReportDialog.jsx'
+import ExportOptionsDialog from '@/components/reports/ExportOptionsDialog.jsx'
 import { exportTimeEntriesToPdf, exportTimeEntriesToCsv } from '@/lib/pdfExport.js'
 import { useData } from '@/contexts/DataContext.jsx'
 import { useAuth } from '@/contexts/AuthContext.jsx'
@@ -45,16 +46,17 @@ const ReportsPage = () => {
   const [exportedFile, setExportedFile] = useState(null);
   const [exportedFileName, setExportedFileName] = useState("");
 
-  const handleExportPdf = async () => {
+  const handleExportPdf = async (exportOptions = {}) => {
     try {
       console.log('Starting PDF export with filtered entries:', filteredEntries);
+      console.log('Export options:', exportOptions);
       
       if (filteredEntries.length === 0) {
         alert('No data to export. Please select a date range with time entries.');
         return;
       }
 
-      const { blob, fileName } = await exportTimeEntriesToPdf(filteredEntries, user, startDate, endDate);
+      const { blob, fileName } = await exportTimeEntriesToPdf(filteredEntries, user, startDate, endDate, exportOptions);
       setExportedFile(blob);
       setExportedFileName(fileName);
       
@@ -177,10 +179,15 @@ const ReportsPage = () => {
           <ReportsTable timeEntries={filteredEntries} hourlyRate={user?.hourlyRate || 0} currency={user?.currency} />
 
           <div className="flex justify-end space-x-4 mt-6">
-            <Button onClick={handleExportPdf} disabled={filteredEntries.length === 0}>
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
-            </Button>
+            <ExportOptionsDialog 
+              trigger={
+                <Button disabled={filteredEntries.length === 0}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
+              }
+              onExport={handleExportPdf}
+            />
             <Button onClick={handleExportCsv} disabled={filteredEntries.length === 0} variant="outline">
               <Download className="w-4 h-4 mr-2" />
               Export CSV
